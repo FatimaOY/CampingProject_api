@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:root@localhost:3306/campingproject"
+}
+
+//models
+
+model User {
+  user_id  Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  password String
+
+  bookings Booking[]
+  reviews  Review[]
+}
+
+model CampingSpot {
+  spot_id   Int     @id @default(autoincrement())
+  name      String
+  location  String
+  price     Float
+  available Boolean
+
+  bookings Booking[]
+  reviews  Review[]
+
+  city_id Int
+  city    City @relation(fields: [city_id], references: [city_id], map: "CampingSpotToCity")
+
+  country_id Int
+  country    Country @relation(fields: [country_id], references: [country_id], map: "CampingSpotToCountry")
+}
+
+model Booking {
+  booking_id Int      @id @default(autoincrement())
+  date_from  DateTime
+  date_to    DateTime
+  user_id    Int
+  spot_id    Int
+  status_id  Int
+
+  user   User        @relation(fields: [user_id], references: [user_id], map: "BookingToUser")
+  spot   CampingSpot @relation(fields: [spot_id], references: [spot_id], map: "BookingToSpot")
+  status Status      @relation(fields: [status_id], references: [status_id], map: "BookingToStatus")
+}
+
+model Review {
+  review_id Int    @id @default(autoincrement())
+  rating    Int
+  comment   String
+  user_id   Int
+  spot_id   Int
+
+  user User        @relation(fields: [user_id], references: [user_id], map: "ReviewToUser")
+  spot CampingSpot @relation(fields: [spot_id], references: [spot_id], map: "ReviewToSpot")
+}
+
+model Status {
+  status_id Int    @id @default(autoincrement())
+  name      String
+
+  bookings Booking[]
+}
+
+model City {
+  city_id    Int    @id
+  name       String
+  country_id Int
+
+  country Country       @relation(fields: [country_id], references: [country_id], map: "CityToCountry")
+  spots   CampingSpot[]
+}
+
+model Country {
+  country_id Int    @id
+  name       String
+
+  cities City[]
+  spots  CampingSpot[]
+}
