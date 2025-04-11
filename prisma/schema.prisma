@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,79 +7,151 @@ datasource db {
   url      = "mysql://root:root@localhost:3306/campingproject"
 }
 
-//models
+model users {
+  user_id       Int             @id @default(autoincrement())
+  email         String          @unique(map: "email") @db.VarChar(255)
+  password      String          @db.VarChar(255)
+  first_name    String?         @db.VarChar(255)
+  last_name     String?         @db.VarChar(255)
+  phone_number  String?         @db.VarChar(20)
+  is_admin      Boolean?        @default(false)
+  image_url     String?         @db.VarChar(255)
+  created_at    DateTime?       @default(now()) @db.DateTime(0)
+  bookings      bookings[]
+  camping_spots camping_spots[] @relation("UserToCampingSpots")
+  reviews       reviews[]
 
-model User {
-  user_id  Int    @id @default(autoincrement())
-  name     String
-  email    String @unique
-  password String
-
-  bookings Booking[]
-  reviews  Review[]
+  @@map("users")
 }
 
-model CampingSpot {
-  spot_id   Int     @id @default(autoincrement())
-  name      String
-  location  String
-  price     Float
-  available Boolean
+model country {
+  country_id Int             @id @default(autoincrement())
+  name       String          @db.VarChar(255)
+  spots      camping_spots[]
+  cities     city[]
 
-  bookings Booking[]
-  reviews  Review[]
-
-  city_id Int
-  city    City @relation(fields: [city_id], references: [city_id], map: "CampingSpotToCity")
-
-  country_id Int
-  country    Country @relation(fields: [country_id], references: [country_id], map: "CampingSpotToCountry")
+  @@map("country")
 }
 
-model Booking {
-  booking_id Int      @id @default(autoincrement())
-  date_from  DateTime
-  date_to    DateTime
-  user_id    Int
-  spot_id    Int
-  status_id  Int
+model city {
+  city_id    Int             @id @default(autoincrement())
+  name       String          @db.VarChar(255)
+  country_id Int?
+  spots      camping_spots[]
+  country    country?        @relation(fields: [country_id], references: [country_id], onDelete: NoAction, onUpdate: NoAction, map: "city_ibfk_1")
 
-  user   User        @relation(fields: [user_id], references: [user_id], map: "BookingToUser")
-  spot   CampingSpot @relation(fields: [spot_id], references: [spot_id], map: "BookingToSpot")
-  status Status      @relation(fields: [status_id], references: [status_id], map: "BookingToStatus")
+  @@index([country_id], map: "country_id")
+  @@map("city")
 }
 
-model Review {
-  review_id Int    @id @default(autoincrement())
-  rating    Int
-  comment   String
-  user_id   Int
-  spot_id   Int
+model camping_spots {
+  spot_id               Int                     @id @default(autoincrement())
+  owner_id              Int?
+  name                  String?                 @db.VarChar(255)
+  location              String?                 @db.VarChar(255)
+  city_id               Int?
+  coutry_id             Int?
+  description           String?                 @db.Text
+  amountGuests          Int?
+  is_Active             Boolean?                @default(true)
+  is_booked             Boolean?                @default(false)
+  price_per_night       Float?
+  created_at            DateTime?               @default(now()) @db.DateTime(0)
+  availability          availability[]
+  bookings              bookings[]
+  owner                 users?                  @relation("UserToCampingSpots", fields: [owner_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "camping_spots_ibfk_1")
+  city                  city?                   @relation(fields: [city_id], references: [city_id], onDelete: NoAction, onUpdate: NoAction, map: "camping_spots_ibfk_2")
+  country               country?                @relation(fields: [coutry_id], references: [country_id], onDelete: NoAction, onUpdate: NoAction, map: "camping_spots_ibfk_3")
+  campingspot_amenities campingspot_amenities[]
+  images                images[]
+  reviews               reviews[]
 
-  user User        @relation(fields: [user_id], references: [user_id], map: "ReviewToUser")
-  spot CampingSpot @relation(fields: [spot_id], references: [spot_id], map: "ReviewToSpot")
+  @@index([city_id], map: "city_id")
+  @@index([coutry_id], map: "coutry_id")
+  @@index([owner_id], map: "owner_id")
+  @@map("camping_spots")
 }
 
-model Status {
-  status_id Int    @id @default(autoincrement())
-  name      String
+model images {
+  image_id      Int            @id @default(autoincrement())
+  spot_id       Int?
+  image_url     String?        @db.VarChar(255)
+  uploaded_at   DateTime?      @default(now()) @db.DateTime(0)
+  camping_spots camping_spots? @relation(fields: [spot_id], references: [spot_id], onDelete: NoAction, onUpdate: NoAction, map: "images_ibfk_1")
 
-  bookings Booking[]
+  @@index([spot_id], map: "spot_id")
+  @@map("images")
 }
 
-model City {
-  city_id    Int    @id
-  name       String
-  country_id Int
+model availability {
+  availability_id Int            @id @default(autoincrement())
+  spot_id         Int?
+  Date            DateTime?      @db.Date
+  isBooked        Boolean?       @default(false)
+  camping_spots   camping_spots? @relation(fields: [spot_id], references: [spot_id], onDelete: NoAction, onUpdate: NoAction, map: "availability_ibfk_1")
 
-  country Country       @relation(fields: [country_id], references: [country_id], map: "CityToCountry")
-  spots   CampingSpot[]
+  @@index([spot_id], map: "spot_id")
+  @@map("availability")
 }
 
-model Country {
-  country_id Int    @id
-  name       String
+model status {
+  status_id Int        @id @default(autoincrement())
+  name      String?    @db.VarChar(255)
+  bookings  bookings[]
 
-  cities City[]
-  spots  CampingSpot[]
+  @@map("status")
+}
+
+model bookings {
+  booking_id     Int            @id @default(autoincrement())
+  user_id        Int?
+  spot_id        Int?
+  check_in_date  DateTime?      @db.Date
+  check_out_date DateTime?      @db.Date
+  status_id      Int?
+  total_price    Float?
+  created_at     DateTime?      @default(now()) @db.DateTime(0)
+  user           users?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "bookings_ibfk_1")
+  spot           camping_spots? @relation(fields: [spot_id], references: [spot_id], onDelete: NoAction, onUpdate: NoAction, map: "bookings_ibfk_2")
+  status         status?        @relation(fields: [status_id], references: [status_id], onDelete: NoAction, onUpdate: NoAction, map: "bookings_ibfk_3")
+
+  @@index([spot_id], map: "spot_id")
+  @@index([status_id], map: "status_id")
+  @@index([user_id], map: "user_id")
+  @@map("bookings")
+}
+
+model reviews {
+  review_id  Int            @id @default(autoincrement())
+  user_id    Int?
+  spot_id    Int?
+  rating     Int?
+  comment    String?        @db.Text
+  created_at DateTime?      @default(now()) @db.DateTime(0)
+  user       users?         @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "reviews_ibfk_1")
+  spot       camping_spots? @relation(fields: [spot_id], references: [spot_id], onDelete: NoAction, onUpdate: NoAction, map: "reviews_ibfk_2")
+
+  @@index([spot_id], map: "spot_id")
+  @@index([user_id], map: "user_id")
+  @@map("reviews")
+}
+
+model amenities {
+  amenity_id            Int                     @id @default(autoincrement())
+  name                  String?                 @db.VarChar(255)
+  description           String?                 @db.Text
+  campingspot_amenities campingspot_amenities[]
+
+  @@map("amenities")
+}
+
+model campingspot_amenities {
+  campingSpot_am_id Int            @id @default(autoincrement())
+  spot_id           Int?
+  amenity_id        Int?
+  camping_spots     camping_spots? @relation(fields: [spot_id], references: [spot_id], onDelete: NoAction, onUpdate: NoAction, map: "campingspot_amenities_ibfk_1")
+  amenities         amenities?     @relation(fields: [amenity_id], references: [amenity_id], onDelete: NoAction, onUpdate: NoAction, map: "campingspot_amenities_ibfk_2")
+
+  @@index([amenity_id], map: "amenity_id")
+  @@index([spot_id], map: "spot_id")
 }
