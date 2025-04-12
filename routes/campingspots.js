@@ -34,15 +34,38 @@ router.get('/', async function (req, res, next) {
 /* POST a new camping spot */
 router.post('/', async function (req, res, next) {
   try {
-    const { owner_id, name, location, city_id, coutry_id, description, amountGuests, price_per_night } = req.body;
+    const {
+      owner_id,
+      name,
+      location,
+      city_name,
+      country_name,
+      description,
+      amountGuests,
+      price_per_night,
+      amenities = []
+    } = req.body;
 
+    // 🔍 Find or create the country
+    let country = await prisma.country.findFirst({ where: { name: country_name } });
+    if (!country) {
+      country = await prisma.country.create({ data: { name: country_name } });
+    }
+
+    // 🔍 Find or create the city
+    let city = await prisma.city.findFirst({ where: { name: city_name } });
+    if (!city) {
+      city = await prisma.city.create({ data: { name: city_name, country_id: country.country_id } });
+    }
+
+    // 🏕️ Create the camping spot
     const newSpot = await prisma.camping_spots.create({
       data: {
         owner_id,
         name,
         location,
-        city_id,
-        coutry_id,
+        city_id: city.city_id,
+        coutry_id: country.country_id,
         description,
         amountGuests,
         price_per_night,
@@ -51,8 +74,21 @@ router.post('/', async function (req, res, next) {
       }
     });
 
-    res.json(newSpot);
+    // ✅ Connect amenities
+    if (amenities.length > 0) {
+      const amenityData = amenities.map(aid => ({
+        spot_id: newSpot.spot_id,
+        amenity_id: aid
+      }));
+
+      await prisma.campingspot_amenities.createMany({
+        data: amenityData
+      });
+    }
+
+    res.status(201).json(newSpot);
   } catch (err) {
+    console.error("Error creating camping spot:", err);
     next(err);
   }
 });
