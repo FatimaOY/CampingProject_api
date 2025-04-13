@@ -3,6 +3,40 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// gets profile either by email or id
+router.get('/', async (req, res, next) => {
+  try {
+    const { email, userId } = req.query;
+
+    if (!email && !userId) {
+      return res.status(400).json({ error: 'Email or userId is required to fetch profile.' });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: email ? { email } : { user_id: parseInt(userId) },
+      select: {
+        user_id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone_number: true,
+        image_url: true,
+        is_admin: true,
+        created_at: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
+
 /* GET profile by email */
 router.get('/', async (req, res, next) => {
   try {
@@ -35,6 +69,34 @@ router.get('/', async (req, res, next) => {
     next(err);
   }
 });
+
+// GET profile by user_id
+router.get('/:id', async (req, res, next) => {
+  const userId = parseInt(req.params.id);
+  if (!userId) return res.status(400).json({ error: "User ID is required" });
+
+  try {
+    const user = await prisma.users.findUnique({
+      where: { user_id: userId },
+      select: {
+        user_id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone_number: true,
+        image_url: true,
+        is_admin: true,
+        created_at: true
+      }
+    });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 /* PUT update profile by email */
 router.put('/', async (req, res, next) => {

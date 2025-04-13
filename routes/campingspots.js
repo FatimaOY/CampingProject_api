@@ -31,6 +31,23 @@ router.get('/', async function (req, res, next) {
   }
 });
 
+// 🔍 GET all camping spots by owner ID
+router.get('/owner/:ownerId', async (req, res) => {
+  const ownerId = parseInt(req.params.ownerId);
+
+  try {
+    const spots = await prisma.camping_spots.findMany({
+      where: { owner_id: ownerId }
+    });
+
+    res.status(200).json(spots);
+  } catch (err) {
+    console.error('Error fetching spots for owner:', err);
+    res.status(500).json({ error: 'Failed to fetch spots for owner.' });
+  }
+});
+
+
 /* POST a new camping spot */
 router.post('/', async function (req, res, next) {
   try {
@@ -133,7 +150,7 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const spotId = parseInt(req.params.id);
 
-    // Check if the spot exists first
+    // Check if the spot exists
     const existingSpot = await prisma.camping_spots.findUnique({
       where: { spot_id: spotId }
     });
@@ -142,16 +159,31 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'Camping spot not found' });
     }
 
-    // Delete the spot
+    // Delete related entries first
+    await prisma.campingspot_amenities.deleteMany({
+      where: { spot_id: spotId }
+    });
+
+    await prisma.availability.deleteMany({
+      where: { spot_id: spotId }
+    });
+
+    await prisma.reviews.deleteMany({
+      where: { spot_id: spotId }
+    });
+
+    // Now delete the camping spot
     await prisma.camping_spots.delete({
       where: { spot_id: spotId }
     });
 
     res.json({ message: 'Camping spot deleted successfully' });
   } catch (err) {
-    next(err);
+    console.error("Error deleting spot:", err); // 👈 Log for debugging
+    res.status(500).json({ error: 'Internal server error while deleting spot.' });
   }
 });
+
 
 // PUT (update) a camping spot by ID
 router.put('/:id', async (req, res, next) => {

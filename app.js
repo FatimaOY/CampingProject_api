@@ -22,8 +22,10 @@ const passwordRouter = require('./routes/password');
 const profileRouter = require('./routes/profile');
 const usersRouter = require('./routes/users');
 const amenitiesRouter = require('./routes/amenities');
+const bookingsRouter = require('./routes/bookings');
 
-
+app.use('/campingspots', require('./routes/campingspots'));
+app.use('/bookings', bookingsRouter);
 app.use('/', indexRouter);
 app.use('/campingspots', campingspotsRouter);
 app.use('/register', registerRouter);
