@@ -126,13 +126,39 @@ router.put('/:id', async (req, res, next) => {
 
 /* DELETE a user by ID */
 router.delete('/:id', async (req, res, next) => {
+  const userId = parseInt(req.params.id);
+
   try {
-    await prisma.users.delete({
-      where: { user_id: parseInt(req.params.id) }
+    // 1. Get all spot IDs owned by this user
+    const spots = await prisma.camping_spots.findMany({
+      where: { owner_id: userId },
+      select: { spot_id: true }
     });
 
-    res.status(200).json({ message: 'User deleted successfully.' });
+    const spotIds = spots.map(s => s.spot_id);
+
+    // 2. Delete from campingspot_amenities
+    await prisma.campingspot_amenities.deleteMany({
+      where: {
+        spot_id: { in: spotIds }
+      }
+    });
+
+    // 3. Delete camping spots
+    await prisma.camping_spots.deleteMany({
+      where: {
+        owner_id: userId
+      }
+    });
+
+    // 4. Finally, delete the user
+    await prisma.users.delete({
+      where: { user_id: userId }
+    });
+
+    res.status(200).json({ message: 'User and all related camping spots deleted successfully.' });
   } catch (err) {
+    console.error('Error deleting user:', err);
     next(err);
   }
 });
