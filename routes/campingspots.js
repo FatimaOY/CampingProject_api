@@ -210,8 +210,19 @@ router.delete('/:id', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const spotId = parseInt(req.params.id);
+    const {
+      name,
+      location,
+      city,
+      country,
+      description,
+      amountGuests,
+      price_per_night,
+      is_Active,
+      is_booked,
+      amenities = []
+    } = req.body;
 
-    // Check if the spot exists
     const existingSpot = await prisma.camping_spots.findUnique({
       where: { spot_id: spotId }
     });
@@ -220,27 +231,56 @@ router.put('/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'Camping spot not found' });
     }
 
-    // Update the spot with only the fields provided in req.body
+    // 🔄 Find or create country
+    let countryRecord = await prisma.country.findFirst({ where: { name: country } });
+    if (!countryRecord) {
+      countryRecord = await prisma.country.create({ data: { name: country } });
+    }
+
+    // 🔄 Find or create city
+    let cityRecord = await prisma.city.findFirst({ where: { name: city } });
+    if (!cityRecord) {
+      cityRecord = await prisma.city.create({
+        data: { name: city, country_id: countryRecord.country_id }
+      });
+    }
+
+    // ✏️ Update the camping spot
     const updatedSpot = await prisma.camping_spots.update({
       where: { spot_id: spotId },
       data: {
-        name: req.body.name,
-        location: req.body.location,
-        city_id: req.body.city_id,
-        coutry_id: req.body.coutry_id,
-        description: req.body.description,
-        amountGuests: req.body.amountGuests,
-        price_per_night: req.body.price_per_night,
-        is_Active: req.body.is_Active,
-        is_booked: req.body.is_booked
+        name,
+        location,
+        city_id: cityRecord.city_id,
+        coutry_id: countryRecord.country_id,
+        description,
+        amountGuests,
+        price_per_night,
+        is_Active,
+        is_booked
       }
     });
 
-    res.json(updatedSpot);
+    // 🔁 Update amenities: remove old, insert new
+    await prisma.campingspot_amenities.deleteMany({ where: { spot_id: spotId } });
+
+    if (amenities.length > 0) {
+      const amenityData = amenities.map(aid => ({
+        spot_id: spotId,
+        amenity_id: aid
+      }));
+
+      await prisma.campingspot_amenities.createMany({ data: amenityData });
+    }
+
+    res.json({ message: 'Camping spot updated', updatedSpot });
+
   } catch (err) {
-    next(err);
+    console.error('Error updating camping spot:', err);
+    res.status(500).json({ error: 'Failed to update camping spot.' });
   }
 });
+
 
 
 module.exports = router;
