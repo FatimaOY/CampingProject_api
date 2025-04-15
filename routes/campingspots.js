@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 router.get('/', async function (req, res, next) {
   try {
     const data = await prisma.camping_spots.findMany({
+      where: { is_Active: true }, // Only get active spots
       include: {
         city: true,
         country: true,
@@ -86,7 +87,7 @@ router.post('/', async function (req, res, next) {
         description,
         amountGuests,
         price_per_night,
-        is_Active: true,
+        is_Active: false,
         is_booked: false
       }
     });
@@ -110,6 +111,24 @@ router.post('/', async function (req, res, next) {
   }
 });
 
+// PATCH: activate a camping spot
+router.patch('/:id/activate', async (req, res) => {
+  const spotId = parseInt(req.params.id);
+
+  try {
+    const spot = await prisma.camping_spots.update({
+      where: { spot_id: spotId },
+      data: { is_Active: req.body.is_Active }
+    });
+
+    res.status(200).json({ message: 'Spot activated', spot });
+  } catch (err) {
+    console.error("Error activating spot:", err);
+    res.status(500).json({ error: 'Failed to activate camping spot' });
+  }
+});
+
+
 // GET one camping spot by ID
 router.get('/:id', async (req, res, next) => {
   try {
@@ -124,7 +143,7 @@ router.get('/:id', async (req, res, next) => {
         availability: true,
         campingspot_amenities: {
           include: {
-            amenities: true // This gets the actual amenity details
+            amenities: true
           }
         }
       }
@@ -134,16 +153,18 @@ router.get('/:id', async (req, res, next) => {
       return res.status(404).json({ message: "Camping spot not found" });
     }
 
-    const cleanedData = data.map(spot => ({
+    const cleanedSpot = {
       ...spot,
       amenities: spot.campingspot_amenities.map(ca => ca.amenities)
-    }));
+    };
 
-    res.json(cleanedData);
+    res.json(cleanedSpot);
   } catch (err) {
-    next(err);
+    console.error("Error fetching spot:", err);
+    res.status(500).json({ error: 'Failed to fetch camping spot.' });
   }
 });
+
 
 // DELETE a camping spot by ID
 router.delete('/:id', async (req, res, next) => {

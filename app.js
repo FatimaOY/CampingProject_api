@@ -24,6 +24,7 @@ const usersRouter = require('./routes/users');
 const amenitiesRouter = require('./routes/amenities');
 const bookingsRouter = require('./routes/bookings');
 const uploadRoutes = require('./routes/upload');
+const availabilityRouter = require('./routes/availability');
 
 app.use('/upload', uploadRoutes);
 app.use('/campingspots', require('./routes/campingspots'));
@@ -37,6 +38,7 @@ app.use('/profile', profileRouter);
 app.use('/users', usersRouter);
 app.use('/amenities', amenitiesRouter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/availability', availabilityRouter);
 
 
 
