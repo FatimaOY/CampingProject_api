@@ -28,7 +28,6 @@ const availabilityRouter = require('./routes/availability');
 const imagesRouter = require('./routes/images');
 
 app.use('/upload', uploadRoutes);
-app.use('/campingspots', require('./routes/campingspots'));
 app.use('/bookings', bookingsRouter);
 app.use('/', indexRouter);
 app.use('/campingspots', campingspotsRouter);
