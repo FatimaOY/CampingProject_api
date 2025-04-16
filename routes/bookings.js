@@ -19,6 +19,34 @@ router.post('/', async (req, res) => {
       }
     });
 
+    // 🛑 Step 1: Get all dates between check_in and check_out
+    const start = new Date(check_in_date);
+    const end = new Date(check_out_date);
+    const dates = [];
+
+    while (start <= end) {
+      dates.push(new Date(start));
+      start.setDate(start.getDate() + 1);
+    }
+
+    // ✅ Step 2: Update isBooked for those dates
+    await Promise.all(
+      dates.map(async d => {
+        await prisma.availability.updateMany({
+          where: {
+            spot_id,
+            Date: {
+              gte: new Date(d.toISOString().split('T')[0]),
+              lt: new Date(new Date(d).setDate(d.getDate() + 1)) // Next day
+            }
+          },
+          data: {
+            isBooked: true
+          }
+        });
+      })
+    );
+
     res.status(201).json(booking);
   } catch (err) {
     console.error('Error creating booking:', err);
