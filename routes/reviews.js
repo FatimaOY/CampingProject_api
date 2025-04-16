@@ -10,7 +10,7 @@ router.get('/spot/:spotId', async (req, res, next) => {
     const reviews = await prisma.reviews.findMany({
       where: { spot_id: spotId },
       include: {
-        users: {
+        user: {
           select: {
             user_id: true,
             first_name: true,

@@ -26,6 +26,8 @@ const bookingsRouter = require('./routes/bookings');
 const uploadRoutes = require('./routes/upload');
 const availabilityRouter = require('./routes/availability');
 const imagesRouter = require('./routes/images');
+const reviewsRouter = require('./routes/reviews');
+
 
 app.use('/upload', uploadRoutes);
 app.use('/bookings', bookingsRouter);
@@ -41,6 +43,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/availability', availabilityRouter);
 app.use('/uploads', express.static('uploads'));
 app.use('/images', imagesRouter);
+app.use('/reviews', reviewsRouter);
 
 
 
