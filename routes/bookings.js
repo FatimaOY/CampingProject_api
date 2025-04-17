@@ -109,4 +109,56 @@ router.get('/owner/:ownerId', async (req, res) => {
   }
 });
 
+// 🔄 PATCH: update booking status (accept or deny)
+router.patch('/:bookingId/status', async (req, res) => {
+  const bookingId = parseInt(req.params.bookingId);
+  const { status_id } = req.body;
+
+  try {
+    // First, find the booking
+    const booking = await prisma.bookings.findUnique({
+      where: { booking_id: bookingId },
+    });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    // If denying the booking (status_id === 3), reset availability
+    if (parseInt(status_id) === 3) {
+      const start = new Date(booking.check_in_date);
+      const end = new Date(booking.check_out_date);
+
+      while (start <= end) {
+        await prisma.availability.updateMany({
+          where: {
+            spot_id: booking.spot_id,
+            Date: {
+              gte: new Date(start.toISOString().split('T')[0]),
+              lt: new Date(new Date(start).setDate(start.getDate() + 1))
+            }
+          },
+          data: { isBooked: false }
+        });
+
+        start.setDate(start.getDate() + 1);
+      }
+    }
+
+    // Update the booking status
+    const updatedBooking = await prisma.bookings.update({
+      where: { booking_id: bookingId },
+      data: { status_id: parseInt(status_id) }
+    });
+
+    res.json({ message: 'Booking status updated.', booking: updatedBooking });
+  } catch (err) {
+    console.error('Error updating booking status:', err);
+    res.status(500).json({ error: 'Failed to update booking status.' });
+  }
+});
+
+
+
+
 module.exports = router;
