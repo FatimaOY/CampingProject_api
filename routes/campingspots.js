@@ -12,6 +12,7 @@ router.get('/', async function (req, res, next) {
       include: {
         city: true,
         country: true,
+        images: true,
         reviews: true,
         availability: true,
         campingspot_amenities: {
@@ -23,7 +24,12 @@ router.get('/', async function (req, res, next) {
     });
     const cleanedData = data.map(spot => ({
       ...spot,
-      amenities: spot.campingspot_amenities.map(ca => ca.amenities)
+      averageRating:
+      spot.reviews.length > 0
+        ? spot.reviews.reduce((sum, r) => sum + r.rating, 0) / spot.reviews.length
+        : null,
+      amenities: spot.campingspot_amenities.map(ca => ca.amenities),
+      images: spot.images 
     }));
 
     res.json(cleanedData);
@@ -155,6 +161,10 @@ router.get('/:id', async (req, res, next) => {
 
     const cleanedSpot = {
       ...spot,
+      averageRating:
+        spot.reviews.length > 0
+          ? spot.reviews.reduce((sum, r) => sum + r.rating, 0) / spot.reviews.length
+          : null,
       amenities: spot.campingspot_amenities.map(ca => ca.amenities)
     };
 
