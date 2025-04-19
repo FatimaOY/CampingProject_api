@@ -158,6 +158,27 @@ router.patch('/:bookingId/status', async (req, res) => {
   }
 });
 
+// GET all bookings (for admin)
+router.get('/all', async (req, res) => {
+  try {
+    const bookings = await prisma.bookings.findMany({
+      include: {
+        user: true,
+        spot: true,
+        status: true
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+    res.json(bookings);
+  } catch (err) {
+    console.error('Error fetching all bookings:', err);
+    res.status(500).json({ error: 'Failed to fetch all bookings.' });
+  }
+});
+
+
 
 
 
