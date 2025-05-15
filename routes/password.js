@@ -4,6 +4,8 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+require('dotenv').config();
+
 
 /* POST update password */
 router.post('/update', async (req, res, next) => {
@@ -50,11 +52,11 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    // Create token + expiration
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    // Creates a token & expiration
+    const token = crypto.randomBytes(32).toString('hex'); //this is to generate a different unique token for each time.
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // it expires in 15 min
 
-    // Save token + expiry to user
+    // this send the token and expiry to database
     await prisma.users.update({
       where: { email },
       data: {
@@ -63,31 +65,30 @@ router.post('/forgot-password', async (req, res) => {
       }
     });
 
-    // Create a test account and transporter (for Ethereal)
-    const testAccount = await nodemailer.createTestAccount();
-
+    // send to the actual email
     const transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
+      host: 'smtp.gmail.com',
+      port: 587, // this is fallback port
+      secure: false, 
       auth: {
-        user: testAccount.user,
-        pass: testAccount.pass
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS
       }
     });
 
     const resetUrl = `http://localhost:8080/reset-password?token=${token}`;
 
     const info = await transporter.sendMail({
-      from: '"Camping Support" <support@camping.local>',
-      to: email,
+      from: '"Camping Support" <yourgmail@gmail.com>',
+      to: email, // will go to the user’s Gmail
       subject: 'Reset your password',
       html: `<p>Click the link below to reset your password:</p>
-             <a href="${resetUrl}">${resetUrl}</a>`
+            <a href="${resetUrl}">${resetUrl}</a>`
     });
 
-    console.log("Preview email:", nodemailer.getTestMessageUrl(info));
+    //console.log("Preview email:", nodemailer.getTestMessageUrl(info));
 
-    res.json({ message: 'Reset email sent. Check console for preview link (Ethereal).' });
+    res.json({ message: 'Reset email sent. Check your email box.' });
 
   } catch (err) {
     console.error("Forgot password error:", err);
