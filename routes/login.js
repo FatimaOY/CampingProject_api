@@ -22,13 +22,14 @@ router.post('/', async (req, res, next) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    // ⚠️ For now, compare passwords directly (plaintext, not secure)
     if (user.password !== password) {
       return res.status(401).json({ error: 'Incorrect password.' });
     }
 
-    // Return user info (omit password!)
+    // The frontend here can get the information about the user without password for extra safety so frontend is accesed by password but it doesnt use it after login.
     const { password: _, ...userWithoutPassword } = user;
+    // _ : ignore variable
+    // ...: It collects all the remaining properties.
 
     res.status(200).json({
       message: 'Login successful!',

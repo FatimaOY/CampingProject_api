@@ -11,8 +11,9 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // save in /uploads folder
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9); 
+    cb(null, uniqueSuffix + path.extname(file.originalname)); //cb to access the file again
+  
   }
 });
 const upload = multer({ storage: storage });
@@ -31,7 +32,8 @@ router.get('/:spot_id', async (req, res, next) => {
   }
 });
 
-/* POST upload a new image (file) */
+/* POST upload a new image (file) */  
+// the photos are done by uploading them to the uploads folder, but in the database they are stores as url
 router.post('/upload', upload.single('image'), async (req, res, next) => {
   try {
     const spotId = parseInt(req.body.spot_id);

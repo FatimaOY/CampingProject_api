@@ -22,7 +22,7 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'Name and description are required.' });
     }
 
-    // Basic exact match check (case-sensitive)
+    // checks if amenity exists
     const existing = await prisma.amenities.findFirst({
       where: {
         name: name
@@ -39,7 +39,7 @@ router.post('/', async (req, res, next) => {
 
     res.status(201).json(newAmenity);
   } catch (err) {
-    console.error('Error in POST /amenities:', err); //log full error
+    console.error('Error in POST /amenities:', err); 
     res.status(500).json({ message: 'Internal Server Error', error: err.message });
   }
 });
@@ -49,7 +49,7 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const amenityId = parseInt(req.params.id);
 
-    // Optional: Check if amenity exists first
+    // first we check if amenity exists
     const existingAmenity = await prisma.amenities.findUnique({
       where: { amenity_id: amenityId }
     });
@@ -58,7 +58,7 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(404).json({ error: 'Amenity not found.' });
     }
 
-    // Delete it
+    // Deletes it
     await prisma.amenities.delete({
       where: { amenity_id: amenityId }
     });

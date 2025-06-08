@@ -129,7 +129,7 @@ router.delete('/:id', async (req, res, next) => {
   const userId = parseInt(req.params.id);
 
   try {
-    // 1. Get all spot IDs owned by this user
+    // Get all spot IDs owned by this user
     const spots = await prisma.camping_spots.findMany({
       where: { owner_id: userId },
       select: { spot_id: true }
@@ -137,21 +137,21 @@ router.delete('/:id', async (req, res, next) => {
 
     const spotIds = spots.map(s => s.spot_id);
 
-    // 2. Delete from campingspot_amenities
+    // Delete from campingspot_amenities the connection table 
     await prisma.campingspot_amenities.deleteMany({
       where: {
         spot_id: { in: spotIds }
       }
     });
 
-    // 3. Delete camping spots
+    // then delete camping spots
     await prisma.camping_spots.deleteMany({
       where: {
         owner_id: userId
       }
     });
 
-    // 4. Finally, delete the user
+    // and then finally we can delete the user this way its to avoid foreign key errors
     await prisma.users.delete({
       where: { user_id: userId }
     });

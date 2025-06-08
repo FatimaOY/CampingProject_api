@@ -3,7 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-/* GET availability for a camping spot */
+/* GET for availability for a camping spot */
 router.get('/:spot_id', async (req, res, next) => {
   try {
     const spotId = parseInt(req.params.spot_id);
@@ -32,7 +32,7 @@ router.post('/toggle', async (req, res, next) => {
       return res.status(400).json({ error: 'spot_id and date are required' });
     }
 
-    // Check if this date is already available
+    // first it checks if this date is already available
     const existing = await prisma.availability.findFirst({
       where: {
         spot_id: spot_id,
@@ -41,7 +41,7 @@ router.post('/toggle', async (req, res, next) => {
     });
 
     if (existing) {
-      // Date already exists — delete it (unmark)
+      // if date already exists then we delete it
       await prisma.availability.delete({
         where: {
           availability_id: existing.availability_id
@@ -50,7 +50,7 @@ router.post('/toggle', async (req, res, next) => {
 
       return res.json({ message: 'Date removed from availability', action: 'removed' });
     } else {
-      // Date does not exist — create it (mark)
+      // if date does not exist then set avail.
       const newAvailability = await prisma.availability.create({
         data: {
           spot_id,
@@ -62,7 +62,7 @@ router.post('/toggle', async (req, res, next) => {
       return res.status(201).json({ message: 'Date added to availability', action: 'added', data: newAvailability });
     }
   } catch (err) {
-    console.error('❌ Error toggling availability:', err);
+    console.error('Error toggling availability:', err);
     res.status(500).json({ error: err.message });
   }
 });

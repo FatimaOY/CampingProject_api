@@ -3,7 +3,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
-require('dotenv').config();
+require('dotenv').config(); //related to the env file
 
 const app = express();
 
@@ -51,13 +51,11 @@ app.use('/reviews', reviewsRouter);
 
 
 // -----------
-//error handler
+//error handeling for debugging
 app.use((err, req, res, next) => {
-    // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
   
-    // render the error page
     res.status(err.status || 500);
     res.status(err.status || 500).json({
       message: err.message,

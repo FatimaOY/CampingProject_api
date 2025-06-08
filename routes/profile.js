@@ -4,7 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 
-//to uploud image.
+//to uploud image i used the multer package 
 const multer = require('multer');
 const path = require('path');
 

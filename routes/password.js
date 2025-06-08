@@ -3,7 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
+const crypto = require('crypto');  //this is for token generationn
 require('dotenv').config();
 
 
@@ -104,7 +104,7 @@ router.post('/reset-password', async (req, res) => {
     const user = await prisma.users.findFirst({
       where: {
         reset_token: token,
-        reset_token_expires_at: { gt: new Date() } // token not expired
+        reset_token_expires_at: { gt: new Date() }
       }
     });
 

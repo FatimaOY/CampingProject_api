@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 router.get('/', async function (req, res, next) {
   try {
     const data = await prisma.camping_spots.findMany({
-      where: { is_Active: true }, // Only get active spots
+      where: { is_Active: true }, // Only get active spots bc i have the option that the owner can deactivate a spot if it's getting renovated or ...
       include: {
         city: true,
         country: true,
@@ -17,16 +17,16 @@ router.get('/', async function (req, res, next) {
         availability: true,
         campingspot_amenities: {
           include: {
-            amenities: true // This gets the actual amenity details
+            amenities: true //to get amenites 
           }
         }
       }
     });
     const cleanedData = data.map(spot => ({
-      ...spot,
+      ...spot,  //... it spreads all original attributes of the spot into a new object.
       averageRating:
       spot.reviews.length > 0
-        ? spot.reviews.reduce((sum, r) => sum + r.rating, 0) / spot.reviews.length
+        ? spot.reviews.reduce((sum, r) => sum + r.rating, 0) / spot.reviews.length  //avg of all reviews
         : null,
       amenities: spot.campingspot_amenities.map(ca => ca.amenities),
       images: spot.images 
@@ -38,7 +38,7 @@ router.get('/', async function (req, res, next) {
   }
 });
 
-// 🔍 GET all camping spots by owner ID
+// GET all camping spots by owner ID
 router.get('/owner/:ownerId', async (req, res) => {
   const ownerId = parseInt(req.params.ownerId);
 
@@ -70,19 +70,19 @@ router.post('/', async function (req, res, next) {
       amenities = []
     } = req.body;
 
-    // 🔍 Find or create the country
+    // Finds or create the country
     let country = await prisma.country.findFirst({ where: { name: country_name } });
     if (!country) {
       country = await prisma.country.create({ data: { name: country_name } });
     }
 
-    // 🔍 Find or create the city
+    // Finds or create the city
     let city = await prisma.city.findFirst({ where: { name: city_name } });
     if (!city) {
       city = await prisma.city.create({ data: { name: city_name, country_id: country.country_id } });
     }
 
-    // 🏕️ Create the camping spot
+    //Creates the camping spot
     const newSpot = await prisma.camping_spots.create({
       data: {
         owner_id,
@@ -98,7 +98,7 @@ router.post('/', async function (req, res, next) {
       }
     });
 
-    // ✅ Connect amenities
+    // to connect amenities
     if (amenities.length > 0) {
       const amenityData = amenities.map(aid => ({
         spot_id: newSpot.spot_id,
@@ -117,7 +117,7 @@ router.post('/', async function (req, res, next) {
   }
 });
 
-// PATCH: activate a camping spot
+// to activate a camping spot
 router.patch('/:id/activate', async (req, res) => {
   const spotId = parseInt(req.params.id);
 
@@ -210,7 +210,7 @@ router.delete('/:id', async (req, res, next) => {
 
     res.json({ message: 'Camping spot deleted successfully' });
   } catch (err) {
-    console.error("Error deleting spot:", err); // 👈 Log for debugging
+    console.error("Error deleting spot:", err); // Log for debugging
     res.status(500).json({ error: 'Internal server error while deleting spot.' });
   }
 });
@@ -241,13 +241,13 @@ router.put('/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'Camping spot not found' });
     }
 
-    // 🔄 Find or create country
+    // to Find or create country
     let countryRecord = await prisma.country.findFirst({ where: { name: country } });
     if (!countryRecord) {
       countryRecord = await prisma.country.create({ data: { name: country } });
     }
 
-    // 🔄 Find or create city
+    // to find or create city
     let cityRecord = await prisma.city.findFirst({ where: { name: city } });
     if (!cityRecord) {
       cityRecord = await prisma.city.create({
@@ -255,7 +255,7 @@ router.put('/:id', async (req, res, next) => {
       });
     }
 
-    // ✏️ Update the camping spot
+    // to update the camping spot
     const updatedSpot = await prisma.camping_spots.update({
       where: { spot_id: spotId },
       data: {
@@ -271,7 +271,7 @@ router.put('/:id', async (req, res, next) => {
       }
     });
 
-    // 🔁 Update amenities: remove old, insert new
+    // to update amenities: remove old, insert new
     await prisma.campingspot_amenities.deleteMany({ where: { spot_id: spotId } });
 
     if (amenities.length > 0) {

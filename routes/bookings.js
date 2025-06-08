@@ -3,7 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// 🔹 POST a new booking
+// POST a new booking
 router.post('/', async (req, res) => {
   const { user_id, spot_id, check_in_date, check_out_date, total_price, status_id } = req.body;
 
@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
       }
     });
 
-    // 🛑 Step 1: Get all dates between check_in and check_out
+    // first we get all dates between check_in and check_out
     const start = new Date(check_in_date);
     const end = new Date(check_out_date);
     const dates = [];
@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
       start.setDate(start.getDate() + 1);
     }
 
-    // ✅ Step 2: Update isBooked for those dates
+    // we have to update isBooked for those dates so that people cant book a booked spot
     await Promise.all(
       dates.map(async d => {
         await prisma.availability.updateMany({
@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
             spot_id,
             Date: {
               gte: new Date(d.toISOString().split('T')[0]),
-              lt: new Date(new Date(d).setDate(d.getDate() + 1)) // Next day
+              lt: new Date(new Date(d).setDate(d.getDate() + 1)) //to get next day
             }
           },
           data: {
@@ -54,7 +54,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 🔹 GET bookings made BY the user
+// GET bookings made BY the user
 router.get('/user/:userId', async (req, res) => {
   const userId = parseInt(req.params.userId);
 
@@ -79,7 +79,7 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// 🔹 GET bookings for spots OWNED by a user
+// GET bookings for spots OWNED by a user so that later they can accept or deny
 router.get('/owner/:ownerId', async (req, res) => {
   const ownerId = parseInt(req.params.ownerId);
 
@@ -109,13 +109,13 @@ router.get('/owner/:ownerId', async (req, res) => {
   }
 });
 
-// 🔄 PATCH: update booking status (accept or deny)
+// to update booking status (accept or deny)
 router.patch('/:bookingId/status', async (req, res) => {
   const bookingId = parseInt(req.params.bookingId);
   const { status_id } = req.body;
 
   try {
-    // First, find the booking
+    // to find the booking
     const booking = await prisma.bookings.findUnique({
       where: { booking_id: bookingId },
     });
@@ -124,7 +124,7 @@ router.patch('/:bookingId/status', async (req, res) => {
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    // If denying the booking (status_id === 3), reset availability
+    // If denying the booking then status_id should be 3
     if (parseInt(status_id) === 3) {
       const start = new Date(booking.check_in_date);
       const end = new Date(booking.check_out_date);
@@ -158,7 +158,7 @@ router.patch('/:bookingId/status', async (req, res) => {
   }
 });
 
-// GET all bookings (for admin)
+// GET all bookings for admin
 router.get('/all', async (req, res) => {
   try {
     const bookings = await prisma.bookings.findMany({
